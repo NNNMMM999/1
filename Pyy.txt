@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained("sambanovasystems/SambaLingo-Serbian-Chat", use_fast=False)
-model = AutoModelForCausalLM.from_pretrained("sambanovasystems/SambaLingo-Serbian-Chat", device_map="auto", torch_dtype="auto")
+llm = AutoModelForCausalLM.from_pretrained("sambanovasystems/SambaLingo-Serbian-Chat", device_map="auto", torch_dtype="auto")
 
 # Option 1: Using Python's built-in open function
 with open("/content/pg11716.txt", "r") as f:
