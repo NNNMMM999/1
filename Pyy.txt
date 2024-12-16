@@ -1,0 +1,50 @@
+import bs4
+from langchain import hub
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_chroma import Chroma
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sentence_transformers import SentenceTransformer
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("sambanovasystems/SambaLingo-Serbian-Chat", use_fast=False)
+model = AutoModelForCausalLM.from_pretrained("sambanovasystems/SambaLingo-Serbian-Chat", device_map="auto", torch_dtype="auto")
+
+# Option 1: Using Python's built-in open function
+with open("/content/pg11716.txt", "r") as f:
+    text = f.read()
+
+# Option 2: Using langchain.text_loaders.FileLoader (if available)
+# Assuming langchain version supports FileLoader
+from langchain_community.document_loaders import TextLoader
+
+loader = TextLoader(file_path='/content/pg11716.txt')
+text = loader.load()
+
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+splits = text_splitter.split_documents(text)
+vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
+
+
+retriever = vectorstore.as_retriever()
+prompt = hub.pull("rlm/rag-prompt")
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+
+
+query1 = "Kada je Nikola Polo otisao u Carigrad?"
+rag_chain1 = create_rag_chain(query1)
+response1 = rag_chain1.invoke(query1)
+print(response1)
